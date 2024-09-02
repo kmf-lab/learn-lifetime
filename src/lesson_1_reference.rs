@@ -48,7 +48,7 @@
 ////////////////////////////////////////////////////////////////
 
 pub(crate) fn examples() {
-    // 1) Scope and Ownership
+
     println!(" --------------- lesson 1 example 1 ---------------");
     {
         let data = String::from("Hello");
@@ -108,37 +108,36 @@ pub(crate) fn examples() {
 
 }
 
-///
-/// For more 'details' read the Rustonomicon:  https://doc.rust-lang.org/nomicon/lifetimes.html
-/// Note this quote:
-/// "Historically, Rust kept the borrow alive until the end of scope, so these examples might fail
-/// to compile with older compilers. Also, there are still some corner cases where Rust fails to
-/// properly shorten the live part of the borrow and fails to compile even when it looks like it
-/// should. These'll be solved over time."
-/// * From our previous lessons we saw examples of shortened scopes.
-/// * Caution the Rustonomicon has strange examples.
-///
-///
-/// Lifetimes in Rust act as placeholders, similar to generics, that specify how long
-/// references are valid, the specific duration is determined by the data they reference.
-///
-/// Every reference has a lifetime. In very early releases of Rust developers had to
-/// annotate every & reference with a lifetime. Elision was formally part of the 2015 release.
-///
-/// Due to lifetime elision rules, most lifetimes are inferred by the compiler and not
-/// explicitly specified.
-///
-/// Elision rules are as follows:
-///
-/// 1.  Each elided lifetime in input position becomes a distinct lifetime parameter.
-///
-/// 2. If there is exactly one input lifetime position (elided or not), that lifetime is
-///    assigned to all elided output lifetimes.
-///
-/// 3. If there are multiple input lifetime positions, but one of them is &self or &mut self,
-///    the lifetime of self is assigned to all elided output lifetimes.
-///
-///
+// For more 'details' read the Rustonomicon:  https://doc.rust-lang.org/nomicon/lifetimes.html
+// Note this quote:
+// "Historically, Rust kept the borrow alive until the end of scope, so these examples might fail
+// to compile with older compilers. Also, there are still some corner cases where Rust fails to
+// properly shorten the live part of the borrow and fails to compile even when it looks like it
+// should. These'll be solved over time."
+// * From our previous lessons we saw examples of shortened scopes.
+// * Caution the Rustonomicon has strange examples.
+//
+//
+// Lifetimes in Rust act as placeholders, similar to generics, that specify how long
+// references are valid, the specific duration is determined by the data they reference.
+//
+// Every reference has a lifetime. In very early releases of Rust developers had to
+// annotate every & reference with a lifetime. Elision was formally part of the 2015 release.
+//
+// Due to lifetime elision rules, most lifetimes are inferred by the compiler and not
+// explicitly specified.
+//
+// Elision rules are as follows:
+//
+// 1.  Each elided lifetime in input position becomes a distinct lifetime parameter.
+//
+// 2. If there is exactly one input lifetime position (elided or not), that lifetime is
+//    assigned to all elided output lifetimes.
+//
+// 3. If there are multiple input lifetime positions, but one of them is &self or &mut self,
+//    the lifetime of self is assigned to all elided output lifetimes.
+
+
 /*  Example from The Rustonomicon      https://doc.rust-lang.org/nomicon/lifetimes.html
 
 fn print(s: &str);                                      // elided
@@ -165,9 +164,8 @@ fn new(buf: &mut [u8]) -> BufWriter<'_>;                // elided (with `rust_20
 fn new<'a>(buf: &'a mut [u8]) -> BufWriter<'a>          // expanded
 
  */
-///  Note the last example, the underscore is a placeholder for the lifetime. It is not clear that
-///  BufWriter is borrowing the buffer for the lifetime of the buffer. The lifetime is inferred
-///  by the compiler.  We use the underscore to indicate that the lifetime is inferred for clarity.
-///
-///
+
+//  Note the last example, the underscore is a placeholder for the lifetime. It is not clear that
+//  BufWriter is borrowing the buffer for the lifetime of the buffer. The lifetime is inferred
+//  by the compiler.  We use the underscore to indicate that the lifetime is inferred for clarity.
 

@@ -28,65 +28,124 @@
 
 pub(crate) fn examples() {
 
-    // self examples on a simple struct
-
-
-
-    // 1) Scope and Ownership
-    println!(" --------------- lesson 1 example 1 ---------------");
-
+    println!(" --------------- lesson 2 example 1 ---------------");
     {
+        //we have no references and do not need any lifetimes
         struct SimpleStruct {
             a: i32,
             b: i32,
         }
+        impl SimpleStruct {
+            fn consume(self) {}
+            fn consume_return_a(self) -> i32 {
+                self.a
+            }
+            fn process_a(self: &Self) -> &i32 { // Elided
+                &self.a
+            }
+            fn update_a(self: &mut Self, a: i32) -> &i32 { // Elided
+                self.a = a;
+                &self.a
+            }
+            fn update_b1(self: &mut Self, b: &i32) -> &i32 { // Elided
+                self.b = *b;
+                &self.b
+            }
+            //false warning in RR, we broke the rules
+            //we can fix this by moving <'goober> way up to impl<'goober> for better clarity
+            fn update_b2<'goober>(self: &mut Self, b: &'goober i32) -> &'goober i32 {
+                self.b = *b;
+                &b
+            }
+        }
+        {
+            let mut s = SimpleStruct { a: 1, b: 2 };
+            let new_b = 7;
+            let _ref_b = s.update_b1(&new_b); //typical use case
+            let ref_b = s.update_b2(&new_b); //strange use case
+            println!("{:?} {:?}", ref_b, s.b);
+            s.b = 10;
+            println!("{:?} {:?}", ref_b, s.b);
+        }
+    }
+
+    {
+        println!(" --------------- lesson 2 example 2 ---------------");
+        //I could use str but used String for simplicity
 
         //struct with unified lifetimes
         #[derive(Debug)]
         struct unified_struct<'a> {
-            a: &'a str,
-            b: &'a str
+            a: &'a String, // we typically give all refs the same lifetime
+            b: &'a String
         }
 
-        //TODO
+        // the implementation block is generic over a lifetime 'a
+        // the unified_struct is to use this lifetime 'a
+        impl<'a> unified_struct<'a> {
+            fn consume(self) {
+            }
+            //strange case where lifetime of a ref is outside our struct
+            fn consume_return_a(self) -> &'a String { //consumed/dropped struct
+                self.a
+            }
+            fn process_a(self: &Self) -> & String { //this ref is the same lifetime as struct
+                self.a
+            }
+            fn update_a(self: & mut Self, a: &'a String) -> & String {
+                self.a = a; // passing in a new ref requires us to tie these lifetimes together
+                self.a
+            }
+            //note this is different from goob above because self.b is a ref
+            fn update_b(self: &mut Self, b: &'a String) -> & String {
+                self.b = b; //must be 'a because we set it here
+                b
+            }
+        }
 
+        {
+          let a:String = "a".to_string();
+          let a_ref = &a;
+            {
+                let b: String = "b".to_string();
+                {
+                    //within this struct we tied a and b together
+                    let s = unified_struct { a: a_ref, b: &b };
+                    println!("{:?}",&s);
+                    //drop(b); //this will cause an error
+                    println!("{:?}",s.a); //what was "inferred" here?
+
+                }
+            }
+          println!("{:?}",a_ref); //what was "inferred" here?
+        }
     }
 
-/*
-
-
-Methods on structs must explicitly declare lifetimes only if they reference data within the struct.
-
-When defining methods for a struct that borrow data from the struct, you need to specify
-lifetimes to ensure that the references are valid for the required duration.
-Multiple references in a function or method can have different lifetimes.
- */
 
     {
-        println!(" --------------- lesson complex example ---------------");
+        println!(" ---------------  lesson 2 example 3  ---------------");
 
         //struct with split lifetimes
 
         #[derive(Debug)]
         struct split_struct<'a,'b> {
-            a: &'a str,
-            b: &'b str
+            a: &'a String,
+            b: &'b String
         }
 
-        fn some_strange_function<'a,'b>(d:split_struct<'a,'b>) -> &'a str {
-            let split_struct {a, b} = d;
+        fn some_strange_function<'a,'b>(d:split_struct<'a,'b>) -> &'a String {
+            let split_struct {a, b} = d; //this is a "partial move" and a "destructuring"
             println!("{:?} {:?}",a,b);
             a
         }
 
-        { //after the other??
+        {
             let a_string = "aaa".to_string();
             let mut a_ref;
             {
                 let b_string = "bbb".to_string();
                 let mut data = split_struct {a: &a_string, b: &b_string};
                 println!("{:?}",&data);
-
                 a_ref = some_strange_function(data);
 
             }
@@ -94,29 +153,28 @@ Multiple references in a function or method can have different lifetimes.
 
         }
 
+        println!(" ---------------  lesson 2 example 3.5  ---------------");
+
         impl <'a,'b>split_struct<'a,'b> {
             fn consume(self) {
             }
-            fn consume_return_a(self) -> &'a str {
+            fn consume_return_a(self) -> &'a String {
                 self.a
             }
-            fn consume_return_b(self) -> &'b str {
+            fn consume_return_b(self) -> &'b String {
                 self.b
             }
-            fn process_a(self: &Self) -> &str {
+            fn process_a(self: &Self) -> &String {
                 self.a
             }
-
-            fn process_b(self: &Self) -> &str {
+            fn process_b(self: &Self) -> &String {
                 self.b
             }
-
-            fn update_a(self: &mut Self, a: &'a str) -> &str {
+            fn update_a(self: &mut Self, a: &'a String) -> &String {
                 self.a = a;
                 a
             }
-
-            fn update_b(self: &mut Self, b: &'b str) -> &str {
+            fn update_b(self: &mut Self, b: &'b String) -> &String {
                 self.b = b;
                 b
             }
@@ -130,8 +188,7 @@ Multiple references in a function or method can have different lifetimes.
                 let mut data = split_struct {a: &a_string, b: &b_string};
 
                 a_ref = data.consume_return_a();
-                //a_ref = data.consume_return_b(); //this can not work.
-
+               // a_ref = data.consume_return_b(); //this can not work. what was inferred?
 
             }
             println!("{:?}",a_ref);
@@ -159,7 +216,8 @@ Multiple references in a function or method can have different lifetimes.
 
                 println!("a:{:?} b:{:?}",data.a,data.b); //questionable practice
 
-                data.a=""; //questionable practice
+                let text = "".to_string();
+                data.a=&text; //questionable practice
 
                 let b_ref = data.process_b(); //questionable practice
                 println!("{:?} ",b_ref);
@@ -171,19 +229,11 @@ Multiple references in a function or method can have different lifetimes.
                 let x = data.consume_return_b(); //questionable practice
                 println!("{:?}",x);
 
-
             };
             println!("{:?}",a_ref);
-
 
         }
 
     }
 
-
-
-    {
-
-
-    }
 }
