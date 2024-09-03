@@ -1,94 +1,37 @@
-/*
 
-End with HRTB
+/***********************************************************/
+/* Lesson 3: Complex lifetime applications*/
+/***********************************************************/
 
-fn apply_to_str<F>(f: F) -> &str
-where
-    F: for<'a> Fn(&'a str) -> &'a str,
-{
-    let s = String::from("Hello");
-    f(&s)
-}
+/// In this lesson, we will push the boundaries of what we've learned so far about
+/// lifetimes in Rust. We'll dive deeper into more complex lifetime scenarios, including
+/// lifetime elision, lifetime subtyping, and Higher-Rank Trait Bounds (HRTBs). Understanding
+/// these concepts will give you the tools to write more flexible and reusable Rust code,
+/// especially when dealing with functions and structs that involve multiple lifetimes.
 
-fn main() {
-    let result = apply_to_str(|s| &s[0..3]);
-    println!("{}", result);  // Output: Hel
-}
+/********************/
+/*   Vocabulary     */
+/********************/
 
-F: for<'a> Fn(&'a str) -> &'a str: This line is using HRTBs. It means that the function f can accept a reference with any lifetime 'a, and it returns a reference with the same lifetime 'a.
+/// Lifetime Elision: The process by which the Rust compiler automatically infers lifetimes
+///                   in function signatures, reducing the need for explicit annotations.
+/// Lifetime Subtyping: A concept where one lifetime is a subtype of another, meaning one
+///                     lifetime can be shorter than another while still satisfying the
+///                     requirements of the code.
+/// Higher-Rank Trait Bounds (HRTBs): A way to express that a function must work for all
+///                                   possible lifetimes, making your code more flexible.
 
-HRTBs in Action: The for<'a> part indicates that the trait bound Fn(&'a str) -> &'a str must hold true for any lifetime 'a. In other words, the function f must work for any possible lifetime of the string slice it receives.
-
-Why It’s Useful:
-Without HRTBs, you’d be forced to work with specific, explicitly named lifetimes. HRTBs allow more flexibility, letting you write more generic and reusable code that works with references of any lifetime.
-In this example, apply_to_str can take any function that transforms a string slice and returns a slice, regardless of the specific lifetime of the slice, thanks to the use of HRTBs.
-
- */
-
-// complex lifetime examples
-
-
-/*
-
-
-
-
-
-Lifetime elision rules allow the Rust compiler to automatically determine lifetimes in many cases,
-reducing the need for explicit lifetime annotations in function signatures and method implementations.
-
-
-In functions with a single reference parameter, the lifetime of the reference parameter is inferred to be the same as the lifetime of the function's return value (if it returns a reference).
-( The inferred lifetime may also bring some baggage with it, more on this later)
-
-When a function has a single reference parameter, Rust infers that the returned reference (if any)
- must be valid for the same lifetime as the input reference. This means the returned reference
- is tied to the same original owner as the input reference and cannot outlive it.
-
-
-
-
-In more complex functions or methods, different reference parameters may have different lifetimes.
- Rust's lifetime system allows you to specify and enforce these different lifetimes to ensure safe borrowing.
-All references with the same named lifetime are bound by the shortest-lived reference they point to.
-
-If multiple references share the same named lifetime, the actual lifespan is defined by the owned
- resources these references are pointing to. This ensures that references do not outlive the data they point to.
-
-When you have multiple references with the same named lifetime, Rust ensures that all of these
-references are not used after the shortest-lived reference expires. This prevents any reference
-from outliving the data it points to, maintaining memory safety.
-
-
-
-*/
-
-
-/*
-
-When you have multiple references with the same named lifetime, Rust ensures that all of these
- references are not used after the shortest-lived reference expires. This prevents any reference
-  from outliving the data it points to, maintaining memory safety.
-
-For example, in the function shortest_lifetime, both x and y have the same lifetime 'a. The
-returned reference will be valid only within the scope where both x and y are valid.
-If x and y have different valid durations, the reference must be dropped or cease to be
- used after the shorter duration expires.
-
-By enforcing these rules, Rust ensures that references do not outlive the data they point to,
-which prevents dangling references and ensures safe memory access.
-
- */
-
-
-
-//   rustonomicon .. quotes.
-//
+////////////////////////////////////////////////////////////////
+/* Lesson 3: Functions */
+////////////////////////////////////////////////////////////////
 
 pub(crate) fn examples() {
 
-    //guard example
-    fn get_length_with_lifetime<'a>(s: &'a str) -> (usize, &'a str) { //lifetime is 'a and it is the same as the return value
+    println!(" --------------- lesson 3 example 1 ---------------");
+    //using lifetime as a guard
+
+    fn get_length_with_lifetime<'a>(s: &'a str) -> (usize, &'a str) {
+        //lifetime is 'a and it is the same as the return value
         (s.len(), s)
     }
 
@@ -101,11 +44,11 @@ pub(crate) fn examples() {
 
             // Attempting to modify the string while it's borrowed will cause a compile-time error
             // This line will cause a compile-time error because `s` is still borrowed immutably
-            s.push_str(" New text");
+            //s.push_str(" New text");
 
             println!("Length with lifetime: {}", length);
 
-            //  drop(_s_ref);
+            drop(_s_ref); //we must force _s_ref to live until now to protect the derived length
 
         } // The immutable borrow ends here
 
@@ -114,33 +57,167 @@ pub(crate) fn examples() {
         println!("String after modification: {}", s);
     }
 
-    //TODO: string example with 3 refences, sort and return the shortest
+    println!(" --------------- lesson 3 example 2 ---------------");
+    // classic example of returning the shortest string
+    // When you have multiple references with the same named lifetime, Rust ensures that
+    // none of these references are used after the shortest-lived owned value expires. This
+    // prevents any reference from outliving the data it points to, maintaining memory safety.
+    fn shortest_length<'a>(x: &'a String,
+                           y: &'a String,
+                           z: &'a String) -> &'a String {
+        let mut vec = vec![x, y, z];
+        vec.sort_by(|a, b| a.len().cmp(&b.len()));
+        vec[0]
+    }
+    {
+        let x = String::from("Hello");
+        let y = String::from("World");
+        let z = String::from("!");
 
-    //TODO: show hardcoded first example need now have liftime on the unused
+        let shortest = shortest_length(&x, &y, &z);
+        println!("Shortest string: {}", shortest);
+    }
+    /////////
+    //an alternate approach is to use lifetime subtyping
+    ////////
+    fn shortest_length_with_lifetime_subtyping<'a,'b:'a>(x: &'a String,
+                                                         y: &'b String,
+                                                         z: &'b String) -> &'a String {
+        let mut vec = vec![x, y, z];
+        vec.sort_by(|a, b| a.len().cmp(&b.len()));
+        vec[0]
+    }
+    println!(" --------------- lesson 3 example 3 ---------------");
+    //if we only return one of the references that is the only thing needing a lifetime
+    fn shortest_length_broken<'a>(x: &'a String,
+                                  y: & String,
+                                  z: & String) -> &'a str {
+        println!("{} {} {}",x,y,z);
+        x.as_str() //also returning a slice to show it is not the same reference
+    }
+    {
+        let x = String::from("Hello");
+        let y = String::from("World");
+        let z = String::from("!");
+        let shortest = shortest_length_broken(&x, &y, &z);
+        println!("Shortest string broken: {}", shortest);
+    }
 
-    //TODO:struct passedi to an object - put in previous
 
-    //TODO: only 1 ref and owned object
+    println!(" --------------- lesson 3 example 4 ---------------");
+    fn do_something1(x: String, y: &String) -> &String { // Elided, we have only one reference
+        y
+    }
 
-    //TODO:  ref in leas to ref out,
-    //     try example pasing in mut struct to populate and return ref...
+    //after we have two we must decorate with lifetimes
+    //see how we used a lifetime to make clear we will not be returning x
+    //I made up the names not_returned and shared to make it clear. you can use any name.
+    fn do_something2<'not_returned,'shared>(x: &'not_returned String, y: &'shared String) -> &'shared String {
+        println!("{} {}",x,y);
+        y
+    }
+    {
+        let x = String::from("Hello");
+        let y = String::from("World");
 
-    //TODO: move async 'a if we have time
+        let result2 = do_something1(x, &y);
+        println!("Result: {}", result2);
 
+        let z = String::from("!");
+        let y_ref = do_something2(&z, &y);
+        println!("Result: {}", y_ref);
 
-    // pub(crate) fn examples2<'b>() {
-    //
-    //     //other examples
-    //     {                                                     //---------------+--  'a
-    //         let mut data: Vec<i32> = vec![1, 2, 3];
-    //         {                                                  //----------+--- 'b
-    //             let x: &'b i32 = Index::index::<'b>(& data, 0);
-    //             {                                              //----------+--- 'c
-    //                 Vec::push(& mut data, 4);
-    //             }
-    //             println!("{}",x);
-    //         }
-    //     }
-    //
-    // }
+    }
+
+    println!(" --------------- lesson 3 example 5 ---------------");
+    //how we could create a new owned value yet return a reference to it
+    //this is a bit of a strange case, but it is possible
+
+    //we know this is not allowed:
+    //   fn attempted_return_owned<'a>(text: String) -> &'a String {
+    //      &text //we had to be clear about its lifetime but could still not return it
+    //   }
+    {
+      struct HoldingStruct {
+          text:String
+      }
+
+      let mut holding = HoldingStruct { text: String::from("Hello") };
+
+      // this strange method puts the new owned value into the outer scope and returns a ref.
+      fn hold_and_ref<'a>(holding: &'a mut HoldingStruct, text: String) -> &'a String {
+          holding.text = text; //we just took ownership of text into holding
+          &holding.text
+      }
+
+      println!("{}",holding.text);
+      println!("{}",hold_and_ref(&mut holding,String::from("world")));
+      println!("{}",holding.text);
+    }
+
+    println!(" --------------- lesson 3 example 6 ---------------");
+         // HRTB (Higher-Rank Trait Bounds) in Action
+    {
+
+        fn apply_to_str<F>(text: &str, f: F) -> & str
+        where
+             F: for<'a> Fn(&'a str) -> &'a str,
+        {
+            f(text)
+        }
+
+        {
+
+            // Use the function with a closure that returns the first 3 characters of the string
+            let result1 = apply_to_str("Hello", |s| &s[0..3]);
+            println!("{}", result1);  // Output: Hel
+
+            // // Use the function with a closure that converts the string to uppercase
+            // let result2 = apply_to_str("Hello", |s| &s.to_uppercase());
+            // println!("{}", result2);  // Output: HELLO
+            //
+            // // Use the function with a closure that reverses the string
+            // let result3 = apply_to_str("Hello", |s| &s.chars().rev().collect::<String>());
+            // println!("{}", result3);  // Output: olleH
+            //
+            // // Use the function with a closure that repeats the string twice
+            // let result4 = apply_to_str("Hello", |s| &format!("{}{}", s, s));
+            // println!("{}", result4);  // Output: HelloHello
+            //
+            // // Use the function with a closure that extracts a substring and converts it to uppercase
+            // let result5 = apply_to_str("Hello, world!", |s| &s[7..12].to_uppercase());
+            // println!("{}", result5);  // Output: WORLD
+            //
+            // Example where `for<'a>` is necessary
+            // let result6 = apply_to_str("Hello", |s| {
+            //     let part1: &str = &s[0..2];
+            //     let part2: &str = &s[2..];
+            //     &format!("{}-{}", part1, part2)
+            // });
+            // println!("{}", result6);  // Output: He-llo
+        }
+
+    }
+
+    /*
+
+    End with HRTB
+
+    F: for<'a> Fn(&'a str) -> &'a str: This line is using HRTBs. It means that the function f
+     can accept a reference with any lifetime 'a, and it returns a reference with the same
+      lifetime 'a.
+
+    HRTBs in Action: The for<'a> part indicates that the trait bound Fn(&'a str) ->
+    &'a str must hold true for any lifetime 'a. In other words, the function f
+     must work for any possible lifetime of the string slice it receives.
+
+    Why It’s Useful:
+    Without HRTBs, you’d be forced to work with specific, explicitly named lifetimes.
+    HRTBs allow more flexibility, letting you write more generic and reusable code that
+    works with references of any lifetime.
+    In this example, apply_to_str can take any function that transforms a string slice and
+    returns a slice, regardless of the specific lifetime of the slice, thanks to the use of HRTBs.
+
+ */
 }
+

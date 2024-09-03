@@ -104,16 +104,16 @@ pub(crate) fn examples() {
         }
 
         {
-          let a:String = "a".to_string();
+          let a:String = String::from("a");
           let a_ref = &a;
             {
-                let b: String = "b".to_string();
+                let b: String = String::from("b");
                 {
                     //within this struct we tied a and b together
                     let s = unified_struct { a: a_ref, b: &b };
                     println!("{:?}",&s);
                     //drop(b); //this will cause an error
-                    println!("{:?}",s.a); //what was "inferred" here?
+                    println!("{:?}",s.a); //what was "inferred" here? baggage?
 
                 }
             }
@@ -140,10 +140,10 @@ pub(crate) fn examples() {
         }
 
         {
-            let a_string = "aaa".to_string();
+            let a_string = String::from("aaa");
             let mut a_ref;
             {
-                let b_string = "bbb".to_string();
+                let b_string = String::from("bbb");
                 let mut data = split_struct {a: &a_string, b: &b_string};
                 println!("{:?}",&data);
                 a_ref = some_strange_function(data);
@@ -181,10 +181,10 @@ pub(crate) fn examples() {
         }
 
         {
-            let a_string = "aaa".to_string();
+            let a_string = String::from("aaa");
             let mut a_ref;
             {
-                let b_string = "bbb".to_string();
+                let b_string = String::from("bbb");
                 let mut data = split_struct {a: &a_string, b: &b_string};
 
                 a_ref = data.consume_return_a();
@@ -195,11 +195,12 @@ pub(crate) fn examples() {
         }
 
         {
-            let a_string = "aaa".to_string();
+            let a_string = String::from("aaa");
             let mut a_ref;
+            let text = String::from("");
 
             {
-                let b_string = "bbb".to_string();
+                let b_string = String::from("bbb");
                 let mut data = split_struct {a: &a_string, b: &b_string};
 
                 //if we assign outside our scope then the compiler discovers the problem
@@ -216,7 +217,6 @@ pub(crate) fn examples() {
 
                 println!("a:{:?} b:{:?}",data.a,data.b); //questionable practice
 
-                let text = "".to_string();
                 data.a=&text; //questionable practice
 
                 let b_ref = data.process_b(); //questionable practice
@@ -231,9 +231,6 @@ pub(crate) fn examples() {
 
             };
             println!("{:?}",a_ref);
-
         }
-
     }
-
 }

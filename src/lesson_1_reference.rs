@@ -13,7 +13,12 @@
 /// the value they point to has a lifetime >= to the reference itself.
 /// This is where lifetimes come into play.
 ///
-/// Lifetimes ensure that references are valid for the duration of their use.
+/// Lifetimes ensure that all references are valid for the duration of their usage.
+/// They help prevent dangling references, which can lead to undefined behavior.
+/// Imagine you lend a book to a friend (reference). You need to ensure that the book
+/// remains available (valid) for as long as your friend needs it. Lifetimes in Rust
+/// make sure that when the reference is still in use, the data it points to hasn’t been
+/// dropped.
 
 /********************/
 /*   Vocabulary     */
@@ -21,12 +26,14 @@
 
 /// Immutable Reference:  A reference to a value that cannot be changed. Multiple immutable
 ///                       references can exist at the same time.
-/// Mutable Reference:    A reference to a value that can be changed. Only one mutable
-///                       reference can exist at a time.
+/// Mutable Reference: A reference that allows the underlying value to be changed.
+///                    Only one mutable reference to a particular value can exist at a time
+///                    to prevent data races. This is enforced by Rust's borrow checker.
 /// Lifetime:    A named region of code during which a REFERENCE is valid.  This is often
 ///              aligned with the scope defined by { } but could be smaller based on last
 ///              usage.  It could even be larger than a scope by naming the lifetime and
 ///              defining it outside the scope.
+///
 /// Elision:     The compiler's ability to infer lifetimes based on the structure of the code
 ///              Similar to the english contraction "I'm" vs "I Am"
 ///
@@ -80,7 +87,7 @@ pub(crate) fn examples() {
         println!("{:?}",my_text); //borrow ref and return nothing
     }
     {
-        let s:String = "message".to_string();
+        let s:String = String::from("message");
         take_ref(&s); //note the owned value s must be held while ref was used
         println!("{:?}",s);
     }
@@ -91,15 +98,16 @@ pub(crate) fn examples() {
         my_text //we can NOT pass in owned object and return &my_text, why?
     }
     {
-        let s:String = "message".to_string();
+        let s:String = String::from("message");
         let r = make_ref(&s);
         println!("{:?}",r);
     }
 
     println!(" --------------- lesson 1 example 5 ---------------");
     //what is a &'static lifetime ?
+    //it may be tempting to use 'static for everything but it is not a good idea
     fn make_string(my_text: &'static str) -> String {
-        my_text.to_string()
+        String::from(my_text)
     }
     {
         let message = make_string("message"); // these literal bytes are in the binary
@@ -126,6 +134,7 @@ pub(crate) fn examples() {
 //
 // Due to lifetime elision rules, most lifetimes are inferred by the compiler and not
 // explicitly specified.
+//       ( The inferred lifetime may also bring some baggage with it, more on this later)
 //
 // Elision rules are as follows:
 //
