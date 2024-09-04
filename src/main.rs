@@ -12,10 +12,9 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rand::Rng;
 
-    const ATTENDEE_COUNT:usize = 10;
+    const ATTENDEE_COUNT:usize = 30;
 
     #[test]
     fn test_pick_range_confirm() {

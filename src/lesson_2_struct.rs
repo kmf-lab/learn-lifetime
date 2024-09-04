@@ -196,7 +196,7 @@ pub(crate) fn examples() {
 
         {
             let a_string = String::from("aaa");
-            let mut a_ref;
+            let a_ref;
             let text = String::from("");
 
             {

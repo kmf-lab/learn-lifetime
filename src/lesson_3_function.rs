@@ -105,7 +105,7 @@ pub(crate) fn examples() {
 
 
     println!(" --------------- lesson 3 example 4 ---------------");
-    fn do_something1(x: String, y: &String) -> &String { // Elided, we have only one reference
+    fn do_something1(_x: String, y: &String) -> &String { // Elided, we have only one reference
         y
     }
 
@@ -175,7 +175,7 @@ pub(crate) fn examples() {
         }
         {
             // Use the function with a closure, returns the first 4 characters of the main string
-            let result1 = apply_to_str("Hello", |s, g| &s[0..4]);
+            let result1 = apply_to_str("Hello", |s, _g| &s[0..4]);
             println!("{}", result1);  // Output: Hel
         }
 
