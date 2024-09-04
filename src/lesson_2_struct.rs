@@ -75,14 +75,14 @@ pub(crate) fn examples() {
 
         //struct with unified lifetimes
         #[derive(Debug)]
-        struct unified_struct<'a> {
+        struct UnifiedStruct<'a> {
             a: &'a String, // we typically give all refs the same lifetime
             b: &'a String
         }
 
         // the implementation block is generic over a lifetime 'a
         // the unified_struct is to use this lifetime 'a
-        impl<'a> unified_struct<'a> {
+        impl<'a> UnifiedStruct<'a> {
             fn consume(self) {
             }
             //strange case where lifetime of a ref is outside our struct
@@ -110,7 +110,7 @@ pub(crate) fn examples() {
                 let b: String = String::from("b");
                 {
                     //within this struct we tied a and b together
-                    let s = unified_struct { a: a_ref, b: &b };
+                    let s = UnifiedStruct { a: a_ref, b: &b };
                     println!("{:?}",&s);
                     //drop(b); //this will cause an error
                     println!("{:?}",s.a); //what was "inferred" here? baggage?
@@ -128,23 +128,23 @@ pub(crate) fn examples() {
         //struct with split lifetimes
 
         #[derive(Debug)]
-        struct split_struct<'a,'b> {
+        struct SplitStruct<'a,'b> {
             a: &'a String,
             b: &'b String
         }
 
-        fn some_strange_function<'a,'b>(d:split_struct<'a,'b>) -> &'a String {
-            let split_struct {a, b} = d; //this is a "partial move" and a "destructuring"
+        fn some_strange_function<'a,'b>(d: SplitStruct<'a,'b>) -> &'a String {
+            let SplitStruct {a, b} = d; //this is a "partial move" and a "destructuring"
             println!("{:?} {:?}",a,b);
             a
         }
 
         {
             let a_string = String::from("aaa");
-            let mut a_ref;
+            let a_ref;
             {
                 let b_string = String::from("bbb");
-                let mut data = split_struct {a: &a_string, b: &b_string};
+                let data = SplitStruct {a: &a_string, b: &b_string};
                 println!("{:?}",&data);
                 a_ref = some_strange_function(data);
 
@@ -155,7 +155,7 @@ pub(crate) fn examples() {
 
         println!(" ---------------  lesson 2 example 3.5  ---------------");
 
-        impl <'a,'b>split_struct<'a,'b> {
+        impl <'a,'b> SplitStruct<'a,'b> {
             fn consume(self) {
             }
             fn consume_return_a(self) -> &'a String {
@@ -182,10 +182,10 @@ pub(crate) fn examples() {
 
         {
             let a_string = String::from("aaa");
-            let mut a_ref;
+            let a_ref;
             {
                 let b_string = String::from("bbb");
-                let mut data = split_struct {a: &a_string, b: &b_string};
+                let data = SplitStruct {a: &a_string, b: &b_string};
 
                 a_ref = data.consume_return_a();
                // a_ref = data.consume_return_b(); //this can not work. what was inferred?
@@ -201,14 +201,14 @@ pub(crate) fn examples() {
 
             {
                 let b_string = String::from("bbb");
-                let mut data = split_struct {a: &a_string, b: &b_string};
+                let mut data = SplitStruct {a: &a_string, b: &b_string};
 
                 //if we assign outside our scope then the compiler discovers the problem
                 // because data holds b and b_string is restricted to this scope.
                 //a_ref = data.process_a(); //this is not allowed, it was not moved out of data
 
 
-                let split_struct {a,b} = data; // this is a "partial move"
+                let SplitStruct {a,b:_} = data; // this is a "partial move"
 
                 a_ref = a; //here we can share the &str out of this scope with data
 

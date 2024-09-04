@@ -3,9 +3,6 @@ mod lesson_1_reference;
 mod lesson_2_struct;
 mod lesson_3_function;
 
-use std::ops::Index;
-use rand::Rng;
-
 fn main() {
     lesson_1_reference::examples();
     lesson_2_struct::examples();
@@ -16,6 +13,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
 
     const ATTENDEE_COUNT:usize = 10;
 

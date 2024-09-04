@@ -112,7 +112,8 @@ pub(crate) fn examples() {
     //after we have two we must decorate with lifetimes
     //see how we used a lifetime to make clear we will not be returning x
     //I made up the names not_returned and shared to make it clear. you can use any name.
-    fn do_something2<'not_returned,'shared>(x: &'not_returned String, y: &'shared String) -> &'shared String {
+    fn do_something2<'not_returned,'shared>(x: &'not_returned String,
+                                            y: &'shared String) -> &'shared String {
         println!("{} {}",x,y);
         y
     }
@@ -156,68 +157,36 @@ pub(crate) fn examples() {
     }
 
     println!(" --------------- lesson 3 example 6 ---------------");
-         // HRTB (Higher-Rank Trait Bounds) in Action
+    // HRTB (Higher-Rank Trait Bounds) in Action
+    // There is very little documentation on higher-ranked lifetimes, so let's break this down.
+
     {
-
-        fn apply_to_str<F>(text: &str, f: F) -> & str
+        fn apply_to_str<F>(text: &str, f: F) -> &str
         where
-             F: for<'a> Fn(&'a str) -> &'a str,
+        // If we only had one reference, lifetimes could be elided. But we have more than one,
+        // so we must specify how lifetimes relate to each other.
+        // Here, F is a closure that takes two references with different lifetimes.
+            F: for<'a, 'goober> Fn(&'a str, &'goober str) -> &'a str,
+        // The for<'a, 'goober> syntax serves a similar purpose to impl<'a, 'goober>,
+        // but it's used here to make the closure flexible over lifetimes.
         {
-            f(text)
+            // We pass the main text and "goober" but that could be version or trace data...
+            f(text, "goober")
         }
-
         {
-
-            // Use the function with a closure that returns the first 3 characters of the string
-            let result1 = apply_to_str("Hello", |s| &s[0..3]);
+            // Use the function with a closure, returns the first 4 characters of the main string
+            let result1 = apply_to_str("Hello", |s, g| &s[0..4]);
             println!("{}", result1);  // Output: Hel
-
-            // // Use the function with a closure that converts the string to uppercase
-            // let result2 = apply_to_str("Hello", |s| &s.to_uppercase());
-            // println!("{}", result2);  // Output: HELLO
-            //
-            // // Use the function with a closure that reverses the string
-            // let result3 = apply_to_str("Hello", |s| &s.chars().rev().collect::<String>());
-            // println!("{}", result3);  // Output: olleH
-            //
-            // // Use the function with a closure that repeats the string twice
-            // let result4 = apply_to_str("Hello", |s| &format!("{}{}", s, s));
-            // println!("{}", result4);  // Output: HelloHello
-            //
-            // // Use the function with a closure that extracts a substring and converts it to uppercase
-            // let result5 = apply_to_str("Hello, world!", |s| &s[7..12].to_uppercase());
-            // println!("{}", result5);  // Output: WORLD
-            //
-            // Example where `for<'a>` is necessary
-            // let result6 = apply_to_str("Hello", |s| {
-            //     let part1: &str = &s[0..2];
-            //     let part2: &str = &s[2..];
-            //     &format!("{}-{}", part1, part2)
-            // });
-            // println!("{}", result6);  // Output: He-llo
         }
 
+        // Without HRTBs, you would be forced to work with specific, explicitly named lifetimes.
+        // HRTBs allow more flexibility, letting you write more generic and reusable code that
+        // works with references of any lifetime without having to introduce a struct or trait.
+        //
+        // In this example, apply_to_str can take any function that transforms a string slice.
+        // Because the function signature takes two references, lifetimes are required. However,
+        // without the for<'a, 'goober> syntax, we would have to specify fixed lifetimes in the
+        // trait, which would make the code less flexible.
     }
-
-    /*
-
-    End with HRTB
-
-    F: for<'a> Fn(&'a str) -> &'a str: This line is using HRTBs. It means that the function f
-     can accept a reference with any lifetime 'a, and it returns a reference with the same
-      lifetime 'a.
-
-    HRTBs in Action: The for<'a> part indicates that the trait bound Fn(&'a str) ->
-    &'a str must hold true for any lifetime 'a. In other words, the function f
-     must work for any possible lifetime of the string slice it receives.
-
-    Why It’s Useful:
-    Without HRTBs, you’d be forced to work with specific, explicitly named lifetimes.
-    HRTBs allow more flexibility, letting you write more generic and reusable code that
-    works with references of any lifetime.
-    In this example, apply_to_str can take any function that transforms a string slice and
-    returns a slice, regardless of the specific lifetime of the slice, thanks to the use of HRTBs.
-
- */
 }
 
