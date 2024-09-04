@@ -4,17 +4,18 @@
 /***********************************************************/
 
 /// Before we go into lifetimes, let's review the basics of references in Rust.
-/// References allow a function or method to access a value without taking ownership
+/// References allow a function or block to access a value without taking ownership
 /// of it, which is called borrowing. There are two types of references in Rust:
 /// immutable references and mutable references.
 ///
 /// References do not hold ownership of the value, so they do not drop or
 /// clean up the value when they go out of scope. However, references do require
-/// the value they point to has a lifetime >= to the reference itself.
+/// the value they reference has a lifetime >= to the reference itself.
 /// This is where lifetimes come into play.
 ///
 /// Lifetimes ensure that all references are valid for the duration of their usage.
 /// They help prevent dangling references, which can lead to undefined behavior.
+///
 /// Imagine you lend a book to a friend (reference). You need to ensure that the book
 /// remains available (valid) for as long as your friend needs it. Lifetimes in Rust
 /// make sure that when the reference is still in use, the data it points to hasn’t been
@@ -25,7 +26,7 @@
 /********************/
 
 /// Immutable Reference:  A reference to a value that cannot be changed. Multiple immutable
-///                       references can exist at the same time.
+///                       references can exist at the same time as long as there are no mutable.
 /// Mutable Reference: A reference that allows the underlying value to be changed.
 ///                    Only one mutable reference to a particular value can exist at a time
 ///                    to prevent data races. This is enforced by Rust's borrow checker.
@@ -94,18 +95,18 @@ pub(crate) fn examples() {
 
 
     println!(" --------------- lesson 1 example 4 ---------------");
-    fn make_ref(my_text: &String) -> &String {
+    fn cant_make_ref(my_text: &String) -> &String {
         my_text //we can NOT pass in owned object and return &my_text, why?
     }
     {
         let s:String = String::from("message");
-        let r = make_ref(&s);
+        let r = cant_make_ref(&s);
         println!("{:?}",r);
     }
 
     println!(" --------------- lesson 1 example 5 ---------------");
     //what is a &'static lifetime ?
-    //it may be tempting to use 'static for everything but it is not a good idea
+    //it may be tempting to use 'static for everything; but it is not a good idea
     fn make_string(my_text: &'static str) -> String {
         String::from(my_text)
     }
@@ -130,11 +131,12 @@ pub(crate) fn examples() {
 // references are valid, the specific duration is determined by the data they reference.
 //
 // Every reference has a lifetime. In very early releases of Rust developers had to
-// annotate every & reference with a lifetime. Elision was formally part of the 2015 release.
+// annotate every & reference with a lifetime. Elision added to simplify this
+// was formally part of the 2015 release.
 //
 // Due to lifetime elision rules, most lifetimes are inferred by the compiler and not
 // explicitly specified.
-//       ( The inferred lifetime may also bring some baggage with it, more on this later)
+//       ( The inferred lifetimes may also bring some baggage, more on this later)
 //
 // Elision rules are as follows:
 //

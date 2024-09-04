@@ -6,7 +6,7 @@
 
 /// Both the easiest and most complex examples of lifetimes can be seen when adding methods
 /// to a struct. This is because every reference in a struct needs a lifetime, and that lifetime
-/// is part of the type of the struct. References returned by implementing methods returning must
+/// is part of the type of the struct. References returned by implementing methods must
 /// have the same lifetime as the struct.  In many ways this is classic OO programming, but with
 /// the added complexity of lifetimes.
 ///
